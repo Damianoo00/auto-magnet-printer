@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import base64
 import logging
+import os
 import shutil
 import subprocess
 import threading
@@ -21,6 +22,9 @@ import uuid
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -47,6 +51,11 @@ THUMBNAIL_MAX_SIZE = 300
 PRINT_DPI = 300
 PRINT_MM = 52
 PRINT_PX = int(PRINT_MM / 25.4 * PRINT_DPI)
+
+WEDDING_TEXT = os.getenv('WEDDING_TEXT', 'ŚLUB TOMASZA I DOMINIKI')
+WEDDING_FONT_SIZE = int(os.getenv('WEDDING_FONT_SIZE', '8'))
+DATE_TEXT = os.getenv('DATE_TEXT', '25 LIPIEC 2026')
+DATE_FONT_SIZE = int(os.getenv('DATE_FONT_SIZE', '8'))
 
 for d in [INCOMING_DIR, PENDING_DIR, ARCHIVE_DIR, REJECTED_DIR]:
     d.mkdir(parents=True, exist_ok=True)
@@ -216,7 +225,13 @@ def generate_pdf_from_slots(slots, archive_dir):
             seen_paths.add(path)
             photo_paths.append(path)
 
-    html = html_template.render(photos=data_uris)
+    html = html_template.render(
+        photos=data_uris,
+        wedding_text=WEDDING_TEXT,
+        wedding_font_size=WEDDING_FONT_SIZE,
+        date_text=DATE_TEXT,
+        date_font_size=DATE_FONT_SIZE,
+    )
     html_path = batch_dir / 'template.html'
     pdf_path = batch_dir / 'template.pdf'
     html_path.write_text(html, encoding='utf-8')

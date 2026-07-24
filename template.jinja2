@@ -47,7 +47,7 @@
             height: 52mm;
             background: #b0b0b0;
             border: 1pt solid black;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .photo-area img {
@@ -115,6 +115,64 @@
                 outline: none;
             }
         }
+
+        @import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+        .logo {
+            position: absolute;
+            left: 6.5mm;
+            top: 50%;
+            transform: translate(-50%, -50%) rotate(90deg);
+            font-family: 'Lobster', cursive;
+            font-size: 9.5pt;
+            color: #E07A23;
+            white-space: nowrap;
+        }
+
+        .instagram {
+            position: absolute;
+            right: 6.5mm;
+            top: 50%;
+            transform: translate(50%, -50%) rotate(-90deg);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 9.5pt;
+            color: black;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 1mm;
+        }
+
+        .instagram svg {
+            width: 3mm;
+            height: 3mm;
+        }
+
+        .wedding {
+            position: absolute;
+            top: 4.5mm;
+            left: 50%;
+            transform: translateX(-50%) rotate(180deg);
+            font-family: 'Bebas Neue', cursive;
+            font-size: {{ wedding_font_size }}pt;
+            color: black;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .date {
+            position: absolute;
+            bottom: 4.5mm;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Bebas Neue', cursive;
+            font-size: {{ date_font_size }}pt;
+            color: black;
+            white-space: nowrap;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -130,6 +188,17 @@
                 <div class="dash dash-tr"></div>
                 <div class="dash dash-bl"></div>
                 <div class="dash dash-br"></div>
+            </div>
+            <div class="wedding">{{ wedding_text }}</div>
+            <div class="date">{{ date_text }}</div>
+            <div class="logo">Przyczep To!</div>
+            <div class="instagram">
+                <svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                </svg>
+                przyczepto
             </div>
         </div>
         {% endfor %}
