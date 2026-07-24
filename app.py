@@ -31,6 +31,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from PIL import Image
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from watchdog.events import PatternMatchingEventHandler
 
 logging.basicConfig(
@@ -682,10 +683,10 @@ def main():
     log.info('http://%s:%d', args.host, args.port)
 
     handler = PhotoHandler()
-    observer = Observer()
+    observer = PollingObserver()
     observer.schedule(handler, str(INCOMING_DIR), recursive=False)
     observer.start()
-    log.info('Watchdog: %s', INCOMING_DIR)
+    log.info('Watchdog: %s (polling enabled)', INCOMING_DIR)
 
     import uvicorn
     uvicorn.run(app, host=args.host, port=args.port, log_level='warning')

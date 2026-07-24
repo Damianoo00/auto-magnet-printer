@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from watchdog.events import PatternMatchingEventHandler
 from jinja2 import Environment, FileSystemLoader
 
@@ -235,7 +236,7 @@ def main():
     processor = BatchProcessor(printer=args.printer, dry_run=args.dry_run)
     handler = PhotoHandler(queue, processor, archive_dir, incoming_dir)
 
-    observer = Observer()
+    observer = PollingObserver()
     observer.schedule(handler, str(incoming_dir), recursive=False)
     observer.start()
 
