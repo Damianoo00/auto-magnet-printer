@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Print</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-hover: #273548;
+            --border: #334155;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --green: #22c55e;
+            --green-bg: #14532d;
+            --red: #ef4444;
+            --red-bg: #7f1d1d;
+            --blue: #3b82f6;
+            --blue-bg: #1e3a5f;
+            --amber: #f59e0b;
+            --purple: #a855f7;
+            --purple-bg: #3b0764;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 16px 20px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
+
+        .progress-wrap {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 24px;
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--blue), var(--green));
+            transition: width 0.4s ease;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #fff;
+            min-width: 40px;
+        }
+
+        .header-btns { display: flex; gap: 8px; }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn-generate { background: var(--purple); color: #fff; }
+        .btn-generate:hover { background: #9333ea; }
+        .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-clear { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+        .btn-clear:hover { background: var(--red); color: #fff; }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+            background: var(--card);
+        }
+
+        .upload-zone:hover, .upload-zone.dragover { border-color: var(--blue); background: var(--blue-bg); }
+        .upload-zone .icon { font-size: 2rem; margin-bottom: 8px; }
+        .upload-zone p { color: var(--muted); font-size: 0.9rem; }
+        .upload-zone input { display: none; }
+
+        section { margin-bottom: 24px; }
+
+        section h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px dashed var(--border);
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 12px;
+        }
+
+        .photo-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.15s, box-shadow 0.15s;
+            border: 1px solid var(--border);
+        }
+
+        .photo-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+
+        .photo-card .thumb {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+            display: block;
+            background: #0f172a;
+        }
+
+        .photo-card .info { padding: 10px 12px; }
+
+        .photo-card .filename {
+            font-size: 0.8rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 8px;
+        }
+
+        .photo-card .controls { display: flex; gap: 6px; align-items: center; }
+
+        .dup-control {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .dup-control button {
+            width: 28px; height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .dup-control button:hover { background: var(--border); }
+        .dup-control button:active { background: var(--blue-bg); }
+
+        .dup-control input {
+            width: 32px; height: 28px;
+            border: none;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: transparent;
+            color: var(--text);
+            -moz-appearance: textfield;
+        }
+
+        .dup-control input::-webkit-outer-spin-button,
+        .dup-control input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .btn-accept {
+            flex: 1;
+            padding: 6px 10px;
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-accept:hover { background: var(--green); color: #000; }
+
+        .btn-reject {
+            padding: 6px 10px;
+            background: transparent;
+            color: var(--red);
+            border: 1px solid var(--red);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-reject:hover { background: var(--red); color: #fff; }
+
+        .slots { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .slot {
+            width: 100px; height: 100px;
+            border-radius: var(--radius);
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card);
+            position: relative;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .slot.filled { border-style: solid; border-color: var(--green); cursor: pointer; overflow: hidden; }
+        .slot.filled:hover { border-color: var(--red); }
+        .slot.filled:hover .slot-remove { opacity: 1; }
+
+        .slot img { width: 100%; height: 100%; object-fit: cover; }
+
+        .slot-num { font-size: 1.5rem; font-weight: 700; color: var(--border); }
+
+        .slot-remove {
+            position: absolute;
+            top: 4px; right: 4px;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: var(--red);
+            color: #fff;
+            border: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .pdf-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            transition: border-color 0.15s;
+        }
+
+        .pdf-item:hover { border-color: var(--purple); }
+        .pdf-item .pdf-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .pdf-item .pdf-info { flex: 1; min-width: 0; }
+        .pdf-item .pdf-time { font-family: monospace; font-size: 0.8rem; color: var(--muted); }
+        .pdf-item .pdf-detail { font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pdf-item .pdf-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+        .btn-sm {
+            padding: 5px 10px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-sm:active { transform: scale(0.97); }
+
+        .btn-preview { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+        .btn-preview:hover { background: var(--blue); color: #fff; }
+
+        .btn-printed { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+        .btn-printed:hover { background: var(--green); color: #000; }
+
+        .btn-remove { background: transparent; color: var(--red); border: 1px solid var(--red); }
+        .btn-remove:hover { background: var(--red); color: #fff; }
+
+        .btn-reuse {
+            padding: 5px 10px;
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-reuse:hover { background: var(--green); color: #000; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.hidden { display: none; }
+
+        .modal {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+            width: 90vw;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 { font-size: 1rem; font-weight: 600; }
+
+        .modal-close {
+            width: 32px; height: 32px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s;
+        }
+
+        .modal-close:hover { background: var(--border); color: var(--text); }
+
+        .modal-body { flex: 1; overflow: auto; padding: 0; }
+        .modal-body embed { width: 100%; height: 75vh; border: none; }
+
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            justify-content: flex-end;
+        }
+
+        .img-preview-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 2500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .img-preview-modal.hidden { display: none; }
+
+        .img-preview-modal img {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        /* History - expandable */
+        .history-list { display: flex; flex-direction: column; gap: 6px; }
+
+        .history-item {
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            user-select: none;
+        }
+
+        .history-header:hover { background: var(--card-hover); }
+
+        .history-header .time {
+            color: var(--muted);
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .history-header .badge {
+            background: var(--blue-bg);
+            color: var(--blue);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .history-header .names {
+            color: var(--muted);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+
+        .history-header .chevron {
+            color: var(--muted);
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .history-item.expanded .chevron { transform: rotate(180deg); }
+
+        .history-body {
+            display: none;
+            border-top: 1px solid var(--border);
+            padding: 14px;
+        }
+
+        .history-item.expanded .history-body { display: block; }
+
+        .history-body .detail-section { margin-bottom: 16px; }
+        .history-body .detail-section:last-child { margin-bottom: 0; }
+
+        .history-body .detail-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .history-body .pdf-preview-wrap {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: #000;
+        }
+
+        .history-body .pdf-preview-wrap embed {
+            width: 100%;
+            height: 400px;
+            border: none;
+        }
+
+        .history-body .pdf-loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .history-body .history-photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .history-body .photo-card .thumb { height: 150px; }
+
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+            max-width: 360px;
+        }
+
+        .toast.success { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+        .toast.error { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            .photo-grid { grid-template-columns: 1fr; }
+            .history-body .history-photo-grid { grid-template-columns: 1fr; }
+            .slot { width: 70px; height: 70px; }
+            header { flex-direction: column; align-items: stretch; }
+            .header-btns { justify-content: center; }
+            .pdf-item { flex-wrap: wrap; }
+            .pdf-item .pdf-actions { width: 100%; justify-content: flex-end; }
+        }
+
+        .rejected-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .rejected-tag {
+            padding: 4px 10px;
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Auto-Print</h1>
+            <div class="progress-wrap">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%">0/8</div>
+                </div>
+            </div>
+            <div class="header-btns">
+                <button class="btn btn-generate" id="btn-generate" title="Generuj PDF z bieżącej kolejki">Generuj PDF</button>
+                <button class="btn btn-clear" id="btn-clear" title="Usuń wszystkie zdjęcia z kolejki">Wyczyść kolejkę</button>
+            </div>
+        </header>
+
+        <div class="upload-zone" id="upload-zone">
+            <div class="icon">+</div>
+            <p>Upuść zdjęcia tutaj lub kliknij, aby przesłać</p>
+            <p style="font-size:0.75rem;margin-top:4px">lub wrzuć pliki do folderu <code>incoming/</code></p>
+            <input type="file" id="file-input" accept="image/*" multiple>
+        </div>
+
+        <section>
+            <h2>Nowe zdjęcia <span id="pending-count" style="color:var(--muted)"></span></h2>
+            <div class="photo-grid" id="pending-grid"></div>
+            <div class="empty-state" id="pending-empty">Brak nowych zdjęć. Wrzuć zdjęcia do folderu <code>incoming/</code> lub użyj uploadu powyżej.</div>
+        </section>
+
+        <section>
+            <h2>Kolejka</h2>
+            <div class="slots" id="queue-slots"></div>
+        </section>
+
+        <section>
+            <h2>PDF do druku <span id="pdf-count" style="color:var(--muted)"></span></h2>
+            <div class="pdf-list" id="pdf-list"></div>
+            <div class="empty-state" id="pdf-empty">Brak wygenerowanych PDF-ów. Wypełnij kolejkę i kliknij "Generuj PDF".</div>
+        </section>
+
+        <section>
+            <h2>Historia</h2>
+            <div class="history-list" id="history-list"></div>
+            <div class="empty-state" id="history-empty">Brak wydrukowanych partii.</div>
+        </section>
+
+        <section>
+            <h2>Odrzucone pliki <span id="rejected-count" style="color:var(--muted)"></span></h2>
+            <div class="rejected-list" id="rejected-list"></div>
+            <div class="empty-state" id="rejected-empty">Brak odrzuconych plików.</div>
+        </section>
+    </div>
+
+    <div class="modal-overlay hidden" id="preview-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="preview-title">Podgląd PDF</h3>
+                <button class="modal-close" onclick="closePreview()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <embed id="preview-embed" type="application/pdf">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-sm btn-remove" onclick="removeFromPreview()">Usuń z kolejki</button>
+                <button class="btn-sm btn-printed" onclick="markPrintedFromPreview()">Wydrukowano</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="img-preview-modal hidden" id="img-preview-modal" onclick="closeImgPreview()">
+        <img id="img-preview-img" src="" alt="">
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        const BATCH_SIZE = 8;
+        let ws = null;
+        let reconnectTimer = null;
+        let currentPreviewId = null;
+        let expandedHistory = {};
+
+        function connectWS() {
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${proto}//${location.host}/ws`);
+
+            ws.onopen = () => {
+                console.log('WS connected');
+                if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+            };
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'state') {
+                    renderState(msg);
+                } else if (msg.type === 'new_photo') {
+                    toast(`Nowe zdjęcie: ${msg.photo.filename}`);
+                } else if (msg.type === 'pdf_generated') {
+                    const p = msg.pdf;
+                    toast(`PDF wygenerowany: ${p.timestamp} (${p.slot_count} slotów)`, 'success');
+                } else if (msg.type === 'error') {
+                    toast(msg.message, 'error');
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WS closed, reconnect in 2s');
+                reconnectTimer = setTimeout(connectWS, 2000);
+            };
+
+            ws.onerror = () => ws.close();
+        }
+
+        function toast(message, type = '') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => el.remove(), 300);
+            }, 3500);
+        }
+
+        function renderState(state) {
+            renderPending(state.pending || []);
+            renderQueue(state.queue || [], state.queue_count || 0);
+            renderPdfQueue(state.pdf_queue || []);
+            renderHistory(state.history || []);
+            renderRejected(state.rejected || []);
+            updateProgress(state.queue_count || 0, state.batch_size || BATCH_SIZE);
+        }
+
+        function renderPending(pending) {
+            const grid = document.getElementById('pending-grid');
+            const empty = document.getElementById('pending-empty');
+            const count = document.getElementById('pending-count');
+
+            count.textContent = pending.length ? `(${pending.length})` : '';
+
+            if (pending.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            grid.innerHTML = pending.map(p => `
+                <div class="photo-card" id="card-${p.id}">
+                    <img class="thumb" src="${p.data_uri}" alt="${p.filename}" loading="lazy">
+                    <div class="info">
+                        <div class="filename" title="${p.filename}">${p.filename}</div>
+                        <div class="controls">
+                            <div class="dup-control">
+                                <button onclick="changeDup('${p.id}', -1)">-</button>
+                                <input type="number" id="dup-${p.id}" value="1" min="1" max="${BATCH_SIZE}" onchange="clampDup('${p.id}')">
+                                <button onclick="changeDup('${p.id}', 1)">+</button>
+                            </div>
+                            <button class="btn-accept" onclick="acceptPhoto('${p.id}')">Akceptuj</button>
+                            <button class="btn-reject" onclick="rejectPhoto('${p.id}')">x</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderQueue(queue, count) {
+            const container = document.getElementById('queue-slots');
+            let html = '';
+            for (let i = 0; i < BATCH_SIZE; i++) {
+                if (i < queue.length) {
+                    const slot = queue[i];
+                    html += `
+                        <div class="slot filled" onclick="removeSlot(${i})" title="${slot.filename} - kliknij by usunac">
+                            <img src="${slot.data_uri || ''}" alt="${slot.filename}">
+                            <button class="slot-remove">x</button>
+                        </div>`;
+                } else {
+                    html += `<div class="slot"><span class="slot-num">${i + 1}</span></div>`;
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        function renderPdfQueue(pdfQueue) {
+            const list = document.getElementById('pdf-list');
+            const empty = document.getElementById('pdf-empty');
+            const count = document.getElementById('pdf-count');
+
+            count.textContent = pdfQueue.length ? `(${pdfQueue.length})` : '';
+
+            if (!pdfQueue || pdfQueue.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            list.innerHTML = pdfQueue.map(p => `
+                <div class="pdf-item">
+                    <span class="pdf-icon">PDF</span>
+                    <div class="pdf-info">
+                        <div class="pdf-time">${p.timestamp}</div>
+                        <div class="pdf-detail">${p.slot_count} slotow: ${p.filenames.join(', ')}</div>
+                    </div>
+                    <div class="pdf-actions">
+                        <button class="btn-sm btn-preview" onclick="previewPdf('${p.id}')">Podglad</button>
+                        <button class="btn-sm btn-printed" onclick="markPrinted('${p.id}')">Wydrukowano</button>
+                        <button class="btn-sm btn-remove" onclick="removePdf('${p.id}')">Usun</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory(history) {
+            const list = document.getElementById('history-list');
+            const empty = document.getElementById('history-empty');
+
+            if (!history || history.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            list.innerHTML = history.slice().reverse().map(h => `
+                <div class="history-item" id="hist-${h.timestamp}">
+                    <div class="history-header" onclick="toggleHistory('${h.timestamp}')">
+                        <span class="time">${h.timestamp}</span>
+                        <span class="badge">${h.slot_count} slotow</span>
+                        <span class="names">${h.filenames.join(', ')}</span>
+                        <span class="chevron">&#9660;</span>
+                    </div>
+                    <div class="history-body" id="hist-body-${h.timestamp}">
+                        <div class="pdf-loading" id="hist-pdf-loading-${h.timestamp}">Kliknij by załadować podgląd PDF...</div>
+                        <div class="detail-section" id="hist-pdf-section-${h.timestamp}" style="display:none">
+                            <div class="detail-label">Podgląd PDF</div>
+                            <div class="pdf-preview-wrap">
+                                <embed id="hist-pdf-embed-${h.timestamp}" type="application/pdf">
+                            </div>
+                        </div>
+                        <div class="detail-section" id="hist-photos-section-${h.timestamp}" style="display:none">
+                            <div class="detail-label">Zdjęcia</div>
+                            <div class="history-photo-grid" id="hist-photos-${h.timestamp}"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            for (const ts of Object.keys(expandedHistory)) {
+                if (expandedHistory[ts]) {
+                    const el = document.getElementById('hist-' + ts);
+                    if (el) el.classList.add('expanded');
+                }
+            }
+        }
+
+        function renderRejected(rejected) {
+            const list = document.getElementById('rejected-list');
+            const empty = document.getElementById('rejected-empty');
+            const count = document.getElementById('rejected-count');
+
+            count.textContent = rejected.length ? `(${rejected.length})` : '';
+
+            if (!rejected || rejected.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            list.innerHTML = rejected.map(f => `<span class="rejected-tag">${f}</span>`).join('');
+        }
+
+        async function toggleHistory(timestamp) {
+            const item = document.getElementById('hist-' + timestamp);
+            if (!item) return;
+
+            const wasExpanded = item.classList.contains('expanded');
+
+            if (wasExpanded) {
+                item.classList.remove('expanded');
+                expandedHistory[timestamp] = false;
+                return;
+            }
+
+            item.classList.add('expanded');
+            expandedHistory[timestamp] = true;
+
+            const loadingEl = document.getElementById('hist-pdf-loading-' + timestamp);
+            const pdfSection = document.getElementById('hist-pdf-section-' + timestamp);
+            const photosSection = document.getElementById('hist-photos-section-' + timestamp);
+
+            if (pdfSection.style.display !== 'none') return;
+
+            try {
+                const resp = await fetch(`/api/history-detail/${timestamp}`);
+                if (!resp.ok) {
+                    loadingEl.textContent = 'Błąd ładowania';
+                    return;
+                }
+                const data = await resp.json();
+
+                loadingEl.style.display = 'none';
+
+                if (data.pdf_data_uri) {
+                    pdfSection.style.display = 'block';
+                    document.getElementById('hist-pdf-embed-' + timestamp).src = data.pdf_data_uri;
+                }
+
+                if (data.photos && data.photos.length > 0) {
+                    photosSection.style.display = 'block';
+                    document.getElementById('hist-photos-' + timestamp).innerHTML = data.photos.map(p => `
+                        <div class="photo-card">
+                            <img class="thumb" src="${p.data_uri}" alt="${p.filename}" loading="lazy" onclick="showImgPreview('${p.data_uri}')" style="cursor:pointer">
+                            <div class="info">
+                                <div class="filename" title="${p.filename}">${p.filename}</div>
+                                <div class="controls">
+                                    <div class="dup-control">
+                                        <button onclick="changeDupHist('${timestamp}','${p.id}',-1)">-</button>
+                                        <input type="number" id="dup-hist-${p.id}" value="1" min="1" max="${BATCH_SIZE}" onchange="clampDupHist('${p.id}')">
+                                        <button onclick="changeDupHist('${timestamp}','${p.id}',1)">+</button>
+                                    </div>
+                                    <button class="btn-accept" onclick="reuseFromHistory('${p.id}')">Dodaj do kolejki</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                loadingEl.textContent = 'Błąd ładowania';
+            }
+        }
+
+        function showImgPreview(dataUri) {
+            document.getElementById('img-preview-img').src = dataUri;
+            document.getElementById('img-preview-modal').classList.remove('hidden');
+        }
+
+        function closeImgPreview() {
+            document.getElementById('img-preview-modal').classList.add('hidden');
+        }
+
+        function changeDupHist(timestamp, photoId, delta) {
+            const input = document.getElementById('dup-hist-' + photoId);
+            if (!input) return;
+            let val = parseInt(input.value) || 1;
+            val = Math.max(1, Math.min(BATCH_SIZE, val + delta));
+            input.value = val;
+        }
+
+        function clampDupHist(photoId) {
+            const input = document.getElementById('dup-hist-' + photoId);
+            if (!input) return;
+            let val = parseInt(input.value) || 1;
+            input.value = Math.max(1, Math.min(BATCH_SIZE, val));
+        }
+
+        async function reuseFromHistory(photoId) {
+            const input = document.getElementById('dup-hist-' + photoId);
+            const duplicates = input ? parseInt(input.value) || 1 : 1;
+            try {
+                const resp = await fetch(`/api/reuse-photo/${photoId}?duplicates=${duplicates}`, { method: 'POST' });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    toast(err.error || 'Blad', 'error');
+                } else {
+                    toast('Zdjęcie dodane do kolejki', 'success');
+                }
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        function updateProgress(count, total) {
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            const fill = document.getElementById('progress-fill');
+            fill.style.width = pct + '%';
+            fill.textContent = pct > 15 ? `${count}/${total}` : '';
+            if (pct <= 15) fill.textContent = '';
+        }
+
+        function changeDup(id, delta) {
+            const input = document.getElementById('dup-' + id);
+            if (!input) return;
+            let val = parseInt(input.value) || 1;
+            val = Math.max(1, Math.min(BATCH_SIZE, val + delta));
+            input.value = val;
+        }
+
+        function clampDup(id) {
+            const input = document.getElementById('dup-' + id);
+            if (!input) return;
+            let val = parseInt(input.value) || 1;
+            input.value = Math.max(1, Math.min(BATCH_SIZE, val));
+        }
+
+        async function acceptPhoto(id) {
+            const input = document.getElementById('dup-' + id);
+            const duplicates = input ? parseInt(input.value) || 1 : 1;
+            try {
+                const resp = await fetch(`/api/accept/${id}?duplicates=${duplicates}`, { method: 'POST' });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    toast(err.error || 'Blad akceptacji', 'error');
+                }
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        async function rejectPhoto(id) {
+            try {
+                await fetch(`/api/reject/${id}`, { method: 'POST' });
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        async function removeSlot(index) {
+            try {
+                await fetch(`/api/remove-slot/${index}`, { method: 'POST' });
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        async function generatePdf() {
+            try {
+                const resp = await fetch('/api/generate-pdf', { method: 'POST' });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    toast(err.error || 'Blad generowania PDF', 'error');
+                }
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        async function previewPdf(pdfId) {
+            currentPreviewId = pdfId;
+            try {
+                const resp = await fetch(`/api/pdf-preview/${pdfId}`);
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    toast(err.error || 'Blad podgladu', 'error');
+                    return;
+                }
+                const data = await resp.json();
+                document.getElementById('preview-title').textContent = `Podglad PDF - ${pdfId}`;
+                document.getElementById('preview-embed').src = data.data_uri;
+                document.getElementById('preview-modal').classList.remove('hidden');
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').classList.add('hidden');
+            document.getElementById('preview-embed').src = '';
+            currentPreviewId = null;
+        }
+
+        async function markPrintedFromPreview() {
+            if (!currentPreviewId) return;
+            await markPrinted(currentPreviewId);
+            closePreview();
+        }
+
+        async function removeFromPreview() {
+            if (!currentPreviewId) return;
+            await removePdf(currentPreviewId);
+            closePreview();
+        }
+
+        async function markPrinted(pdfId) {
+            try {
+                const resp = await fetch(`/api/mark-printed/${pdfId}`, { method: 'POST' });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    toast(err.error || 'Blad', 'error');
+                } else {
+                    toast('Oznaczono jako wydrukowane', 'success');
+                }
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        async function removePdf(pdfId) {
+            try {
+                await fetch(`/api/remove-pdf/${pdfId}`, { method: 'POST' });
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        async function clearQueue() {
+            if (!confirm('Usunac wszystkie zdjecia z kolejki?')) return;
+            try {
+                await fetch('/api/clear-queue', { method: 'POST' });
+            } catch (e) {
+                toast('Blad polaczenia', 'error');
+            }
+        }
+
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            uploadFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', () => {
+            uploadFiles(fileInput.files);
+            fileInput.value = '';
+        });
+
+        async function uploadFiles(files) {
+            for (const file of files) {
+                const form = new FormData();
+                form.append('file', file);
+                try {
+                    const resp = await fetch('/api/upload', { method: 'POST', body: form });
+                    if (!resp.ok) {
+                        const err = await resp.json();
+                        toast(`Blad uploadu ${file.name}: ${err.error}`, 'error');
+                    }
+                } catch (e) {
+                    toast(`Blad uploadu ${file.name}`, 'error');
+                }
+            }
+        }
+
+        document.getElementById('btn-generate').addEventListener('click', generatePdf);
+        document.getElementById('btn-clear').addEventListener('click', clearQueue);
+
+        document.getElementById('preview-modal').addEventListener('click', function(e) {
+            if (e.target === this) closePreview();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closePreview();
+        });
+
+        connectWS();
+    </script>
+</body>
+</html>

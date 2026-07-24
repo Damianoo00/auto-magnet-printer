@@ -1,0 +1,30 @@
+services:
+  auto-print:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auto-print
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      - type: bind
+        source: ./incoming
+        target: /app/incoming
+      - type: bind
+        source: ./pending
+        target: /app/pending
+      - type: bind
+        source: ./archive
+        target: /app/archive
+      - type: bind
+        source: ./rejected
+        target: /app/rejected
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/state')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

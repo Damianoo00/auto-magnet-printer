@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Template A4 - 8 placeholderów 71x71mm</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #e0e0e0;
+        }
+
+        .page {
+            position: relative;
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            margin: 0 auto;
+            outline: 2px solid red;
+        }
+
+        .frame {
+            position: absolute;
+            width: 71mm;
+            height: 71mm;
+            border: 1.5pt solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-area {
+            position: relative;
+            width: 52mm;
+            height: 52mm;
+            background: #b0b0b0;
+            border: 1pt solid black;
+            overflow: hidden;
+        }
+
+        .photo-area img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .dash {
+            position: absolute;
+            width: 25mm;
+            height: 0;
+            border-top: 1pt dashed black;
+            transform-origin: center center;
+        }
+
+        .dash-tl {
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .dash-tr {
+            top: 0;
+            right: 0;
+            transform: translate(50%, -50%) rotate(45deg);
+        }
+
+        .dash-bl {
+            bottom: 0;
+            left: 0;
+            transform: translate(-50%, 50%) rotate(45deg);
+        }
+
+        .dash-br {
+            bottom: 0;
+            right: 0;
+            transform: translate(50%, 50%) rotate(-45deg);
+        }
+
+        .f1 { left: 20mm; top: 5mm; }
+        .f2 { left: 119mm; top: 5mm; }
+        .f3 { left: 20mm; top: 77mm; }
+        .f4 { left: 119mm; top: 77mm; }
+        .f5 { left: 20mm; top: 149mm; }
+        .f6 { left: 119mm; top: 149mm; }
+        .f7 { left: 20mm; top: 221mm; }
+        .f8 { left: 119mm; top: 221mm; }
+
+        @page {
+            size: 210mm 297mm;
+            margin: 0;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .page {
+                margin: 0;
+                outline: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        {% for photo in photos %}
+        <div class="frame f{{ loop.index }}">
+            <div class="photo-area">
+                {% if photo %}
+                <img src="{{ photo }}" alt="photo {{ loop.index }}">
+                {% endif %}
+                <div class="dash dash-tl"></div>
+                <div class="dash dash-tr"></div>
+                <div class="dash dash-bl"></div>
+                <div class="dash dash-br"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>
