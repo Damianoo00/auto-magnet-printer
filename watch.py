@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 BATCH_SIZE = 8
-SUPPORTED_PATTERNS = ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.gif', '*.webp']
+SUPPORTED_PATTERNS = ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.gif', '*.webp', '*.heic', '*.heif', '*.avif', '*.tiff', '*.tif']
 
 
 class PhotoQueue:
@@ -157,7 +157,7 @@ class BatchProcessor:
 
 class PhotoHandler(PatternMatchingEventHandler):
     def __init__(self, queue, processor, archive_dir, incoming_dir):
-        super().__init__(patterns=SUPPORTED_PATTERNS, ignore_directories=True)
+        super().__init__(patterns=SUPPORTED_PATTERNS, ignore_directories=True, case_sensitive=False)
         self.queue = queue
         self.processor = processor
         self.archive_dir = archive_dir

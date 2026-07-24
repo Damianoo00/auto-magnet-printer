@@ -29,10 +29,13 @@ load_dotenv()
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from jinja2 import Environment, FileSystemLoader
-from PIL import Image
+from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import PatternMatchingEventHandler
+
+register_heif_opener()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -77,22 +80,55 @@ connected_clients: set[WebSocket] = set()
 main_event_loop = None
 
 
-def verify_and_convert(src_path):
-    try:
-        img = Image.open(src_path)
-        img.verify()
-    except Exception:
-        log.warning('Nieprawidłowy obraz: %s', src_path.name)
-        return None
+def square_crop_and_pad(img, size):
+    img = ImageOps.exif_transpose(img)
+    if img.mode not in ('RGB', 'L'):
+        img = img.convert('RGB')
+    
+    width, height = img.size
+    if width == height:
+        img_resized = img.resize((size, size), Image.LANCZOS)
+        return img_resized
+    
+    if width > height:
+        new_height = int(height * size / width)
+        img_resized = img.resize((size, new_height), Image.LANCZOS)
+        delta = (size - new_height) // 2
+        img_padded = Image.new('RGB', (size, size), color='white')
+        img_padded.paste(img_resized, (0, delta))
+    else:
+        new_width = int(width * size / height)
+        img_resized = img.resize((new_width, size), Image.LANCZOS)
+        delta = (size - new_width) // 2
+        img_padded = Image.new('RGB', (size, size), color='white')
+        img_padded.paste(img_resized, (delta, 0))
+    
+    return img_padded
 
+
+def verify_and_convert(src_path):
     dest_path = src_path.with_suffix('.jpg')
     if dest_path == src_path:
         dest_path = src_path.with_name(src_path.stem + '_conv.jpg')
 
     try:
+        if src_path.suffix.lower() in {'.heic', '.heif'}:
+            img = Image.open(src_path)
+            img = square_crop_and_pad(img, PRINT_PX)
+            img.save(dest_path, 'JPEG', quality=90, subsampling=0)
+            
+            if src_path != dest_path:
+                src_path.unlink(missing_ok=True)
+            
+            img_verify = Image.open(dest_path)
+            img_verify.verify()
+            return dest_path
+        
         result = subprocess.run([
             'ffmpeg', '-y', '-i', str(src_path),
-            '-vf', f'crop=min(iw\\,ih):min(iw\\,ih):(iw-min(iw\\,ih))/2:(ih-min(iw\\,ih))/2,scale={PRINT_PX}:{PRINT_PX}',
+            '-map', '0:0',
+            '-update', '1',
+            '-vf', f'scale={PRINT_PX}:{PRINT_PX}:force_original_aspect_ratio=decrease,pad={PRINT_PX}:{PRINT_PX}:(ow-iw)/2:(oh-ih)/2',
             '-q:v', '2',
             str(dest_path),
         ], capture_output=True, text=True, timeout=30)
@@ -104,6 +140,8 @@ def verify_and_convert(src_path):
         if src_path != dest_path:
             src_path.unlink(missing_ok=True)
 
+        img = Image.open(dest_path)
+        img.verify()
         return dest_path
     except FileNotFoundError:
         log.error('ffmpeg nie znaleziony')
@@ -112,7 +150,7 @@ def verify_and_convert(src_path):
         log.error('ffmpeg timeout')
         return None
     except Exception as e:
-        log.error('ffmpeg wyjątek: %s', e)
+        log.error('Błąd konwersji: %s', e)
         return None
 
 
@@ -306,6 +344,7 @@ class PhotoHandler(PatternMatchingEventHandler):
         super().__init__(
             patterns=[f'*{ext}' for ext in SUPPORTED_EXTENSIONS],
             ignore_directories=True,
+            case_sensitive=False,
         )
 
     def on_created(self, event):
