@@ -8,19 +8,24 @@ services:
       - "${PORT:-8080}:8080"
     volumes:
       - type: bind
-        source: ./incoming
+        source: ${PWD}/incoming
         target: /app/incoming
       - type: bind
-        source: ./pending
+        source: ${PWD}/pending
         target: /app/pending
       - type: bind
-        source: ./archive
+        source: ${PWD}/archive
         target: /app/archive
       - type: bind
-        source: ./rejected
+        source: ${PWD}/rejected
         target: /app/rejected
     environment:
       - PYTHONUNBUFFERED=1
+      - PORT=${PORT}
+      - WEDDING_TEXT=${WEDDING_TEXT}
+      - WEDDING_FONT_SIZE=${WEDDING_FONT_SIZE}
+      - DATE_TEXT=${DATE_TEXT}
+      - DATE_FONT_SIZE=${DATE_FONT_SIZE}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/state')"]
