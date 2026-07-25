@@ -57,9 +57,9 @@ PRINT_MM = 52
 PRINT_PX = int(PRINT_MM / 25.4 * PRINT_DPI)
 
 WEDDING_TEXT = os.getenv('WEDDING_TEXT', 'ŚLUB TOMASZA I DOMINIKI')
-WEDDING_FONT_SIZE = int(os.getenv('WEDDING_FONT_SIZE', '8'))
+WEDDING_FONT_SIZE = int(os.getenv('WEDDING_FONT_SIZE', '7'))
 DATE_TEXT = os.getenv('DATE_TEXT', '25 LIPIEC 2026')
-DATE_FONT_SIZE = int(os.getenv('DATE_FONT_SIZE', '8'))
+DATE_FONT_SIZE = int(os.getenv('DATE_FONT_SIZE', '7'))
 
 for d in [INCOMING_DIR, PENDING_DIR, ARCHIVE_DIR, REJECTED_DIR]:
     d.mkdir(parents=True, exist_ok=True)

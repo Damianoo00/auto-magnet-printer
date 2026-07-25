@@ -68,26 +68,26 @@
         }
 
         .dash-tl {
-            top: 0;
-            left: 0;
+            top: 10.914mm;
+            left: 10.914mm;
             transform: translate(-50%, -50%) rotate(-45deg);
         }
 
         .dash-tr {
-            top: 0;
-            right: 0;
+            top: 10.914mm;
+            right: 10.914mm;
             transform: translate(50%, -50%) rotate(45deg);
         }
 
         .dash-bl {
-            bottom: 0;
-            left: 0;
+            bottom: 10.914mm;
+            left: 10.914mm;
             transform: translate(-50%, 50%) rotate(45deg);
         }
 
         .dash-br {
-            bottom: 0;
-            right: 0;
+            bottom: 10.914mm;
+            right: 10.914mm;
             transform: translate(50%, 50%) rotate(-45deg);
         }
 
@@ -122,22 +122,22 @@
 
         .logo {
             position: absolute;
-            left: 6.5mm;
+            left: 7mm;
             top: 50%;
             transform: translate(-50%, -50%) rotate(90deg);
             font-family: 'Lobster', cursive;
-            font-size: 9.5pt;
+            font-size: 8.5pt;
             color: #E07A23;
             white-space: nowrap;
         }
 
         .instagram {
             position: absolute;
-            right: 6.5mm;
+            right: 7mm;
             top: 50%;
             transform: translate(50%, -50%) rotate(-90deg);
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 9.5pt;
+            font-size: 8.5pt;
             color: black;
             white-space: nowrap;
             display: flex;
@@ -152,7 +152,7 @@
 
         .wedding {
             position: absolute;
-            top: 4.5mm;
+            top: 5.5mm;
             left: 50%;
             transform: translateX(-50%) rotate(180deg);
             font-family: 'Bebas Neue', cursive;
@@ -164,7 +164,7 @@
 
         .date {
             position: absolute;
-            bottom: 4.5mm;
+            bottom: 5.5mm;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Bebas Neue', cursive;
@@ -180,14 +180,14 @@
     <div class="page">
         {% for photo in photos %}
         <div class="frame f{{ loop.index }}">
+            <div class="dash dash-tl"></div>
+            <div class="dash dash-tr"></div>
+            <div class="dash dash-bl"></div>
+            <div class="dash dash-br"></div>
             <div class="photo-area">
                 {% if photo %}
                 <img src="{{ photo }}" alt="photo {{ loop.index }}">
                 {% endif %}
-                <div class="dash dash-tl"></div>
-                <div class="dash dash-tr"></div>
-                <div class="dash dash-bl"></div>
-                <div class="dash dash-br"></div>
             </div>
             <div class="wedding">{{ wedding_text }}</div>
             <div class="date">{{ date_text }}</div>
